@@ -1,0 +1,230 @@
+---
+title: "assignment2"
+author: "Shuai Yan, Ethan Tse"
+date: "2023-10-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+
+# set seed
+seed_value <- 19710822
+set.seed(seed_value)
+```
+
+# Define functions:
+
+```{r shades of grey function}
+simulate_dating_2 <- function(population = 1000,
+                              phase1_fraction = 1 / exp(1),
+                              num_iterations = 1, 
+                              distribution = "rnorm", 
+                              stdev = 1, 
+                              use_rejection = FALSE) {
+  spouse_scores <- numeric(length = num_iterations)
+  phase1_size <- round(population * phase1_fraction)
+  
+  for (case_idx in 1:num_iterations) {
+    
+    if(!distribution %in% c("rnorm", "runif")){
+      stop("OOPS: UNSPECIFIED DISTRIBUTION :PPPP")
+    }
+    
+    # scores of potential mates 
+    # add options for sampling
+    if(distribution == "rnorm"){
+      score <- rnorm(population, sd = stdev)
+    } else if(distribution == "runif"){
+      score <- runif(population)
+    } 
+    
+    # we date the first phase1_size people
+    # and note the maximum score in that group
+    cutoff_score <- max(score[1:phase1_size])
+    optimal_score <- max(score)
+    
+    if(use_rejection == TRUE) {
+      # question 3 inversely proportional rejection rate 
+      
+      # get indices of all people who pass cutoff
+      candidate_spouse_index <- phase1_size +
+        which(score[(phase1_size+1):population] > cutoff_score)
+      
+      # get scores of all people who pass cutoff
+      candidate_scores <- score[candidate_spouse_index]
+      
+      # guard against no candidates with scores > cutoff
+      if(length(candidate_scores) > 0){
+        # for each candidate, compute rejection rate, and run a bernoulli trial for reject or accept
+        for(idx in length(candidate_scores)){
+          candidate_score <- candidate_scores[idx]
+          
+          # inversely proportion to like
+          rejection_prob <- 1/candidate_score
+          reject_or_accept <- rbernoulli(n = 1, p = rejection_prob)
+          
+          # upon first accept, break out of the loop
+          if(reject_or_accept == 1){
+            spouse_index <- idx
+            break()
+          } else{
+            # note: if no one accepts, code below handles case of spouse_index == NA
+            spouse_index <- NA
+          }
+        }
+      } else{
+        spouse_index <- NA
+      }
+      
+    } else {
+      # now select as your life partner the next date with a better score
+      spouse_index <- phase1_size +
+        which(score[(phase1_size+1):population] > cutoff_score)[1]
+    }
+    
+    if (is.na(spouse_index)) {
+      spouse_index <- population
+    }
+    spouse_scores[case_idx] <- score[spouse_index]
+  }
+  
+  # return(mean(spouse_scores))
+  return(spouse_scores)
+}
+
+
+score_and_plot_figure <- function(scores){
+  scores_df <- as.data.frame(scores) 
+  colnames(scores_df) <- c("score_0.15", "score_0.37")
+  
+  scores_df_long <- scores_df %>% 
+    pivot_longer(cols = everything(), names_to = "phase1_fractions", values_to = "score")
+  
+  scores_histogram <- scores_df_long %>% 
+    ggplot(aes(x = score)) + 
+    geom_histogram(colour = "black", fill = "lightblue") + 
+    theme_classic() + 
+    facet_wrap(~phase1_fractions)
+  
+  return(scores_histogram)
+}
+
+```
+
+
+
+
+# Part 1
+
+__Ans:__ 
+
++ The bimodal distributions have a peak at 0 because that is the case where the optimal score in the population is included in the phase 1 fraction, and in this situtation, the spouse is the last person in the population. Therefore, the distribution of the first mode is the same as the distribution that the population was sampled from (i.e. standard normal distribution).
++ The difference between 0.15 and 0.37 is because 
+
+
+```{r question 1}
+# Test fractions
+phase1_fractions <- c(0.15, 0.37) #seq(0.05, 0.95, 0.02)
+scores <- list() # list to save scores 
+for (idx in 1:length(phase1_fractions)) {
+  scores[[idx]] <- simulate_dating_2(population = 100,
+                                     phase1_fraction = phase1_fractions[idx],
+                                     num_iterations = 10000)
+}
+
+
+q1_plot <- score_and_plot_figure(scores)
+q1_plot
+```
+
+# Part 2
+
+```{r question 2, fig.width=12, fig.heigth = 12}
+# Test fractions
+phase1_fractions <- seq(0.05, 0.95, 0.02)
+stdev_fractions <- c(1)#seq(1, 51, 5)
+
+q2_sd_experiment <- list()
+q2_scores <- list() # list to save scores 
+for(sd_idx in 1:length(stdev_fractions)){
+  for (idx in 1:length(phase1_fractions)) {
+    iteration_mean <- mean(simulate_dating_2(population = 1000,
+                                             phase1_fraction = phase1_fractions[idx],
+                                             num_iterations = 10000, 
+                                             distribution = "rnorm", 
+                                             stdev = stdev_fractions[sd_idx]))
+    
+    q2_scores[[idx]] <- data.frame(mean = iteration_mean, phase1_fractions = phase1_fractions[idx], sd = stdev_fractions[sd_idx])
+  }
+  
+  q2_scores_df <- bind_rows(q2_scores)
+  q2_sd_experiment[[sd_idx]] <- q2_scores_df
+}
+
+multi_sd_df <- bind_rows(q2_sd_experiment)
+
+# q2_scores_df <- as.data.frame(q2_scores) 
+# colnames(q2_scores_df) <- paste(phase1_fractions)
+# 
+# q2_scores_df_long <- q2_scores_df %>% 
+#   pivot_longer(cols = everything(), names_to = "phase1_fractions", values_to = "score")
+
+# max_score <- q2_scores_df_long %>% 
+#   arrange(desc(score)) %>% 
+#   slice(1) %>% 
+#   pull(phase1_fractions)
+# 
+# max_score
+
+
+max_scores_by_sd <- multi_sd_df %>% 
+  group_by(sd) %>% 
+  slice_max(mean)
+
+q2_score_plot <- multi_sd_df %>% 
+  ggplot(aes(x = phase1_fractions, y = mean, fill = factor(sd))) + 
+  geom_point(colour = "black", shape = 21, size = 4) + 
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 90), 
+        plot.title = element_text(hjust = 0.5, size = 15)) + 
+  geom_vline(aes(xintercept = phase1_fractions), data=max_scores_by_sd, colour = "red", linetype = "dashed") +
+  labs(x = "Phase 1 Fractions", 
+       y = "Score") + 
+  scale_x_continuous(n.breaks = 5) + 
+  facet_wrap(.~factor(sd), scales = "free")
+
+q2_score_plot
+max_scores_by_sd
+
+```
+
+
+```{r question 3}
+
+q3_scores <- list()
+for (idx in 1:length(phase1_fractions)) {
+  iteration_mean <- mean(simulate_dating_2(population = 1000,
+                                           phase1_fraction = phase1_fractions[idx],
+                                           num_iterations = 10000, 
+                                           distribution = "rnorm", 
+                                           stdev = 1, 
+                                           use_rejection = TRUE))
+  
+  q3_scores[[idx]] <- data.frame(mean = iteration_mean, phase1_fractions = phase1_fractions[idx])
+}
+
+q3_df <- bind_rows(q3_scores)
+
+q3_df %>% ggplot(aes(x = phase1_fractions, y = mean)) + 
+  geom_point(colour = "black", fill = "lightblue", size = 4, shape = 21) +
+  labs(x = "Phase 1 Fractions", 
+       y = "Score") + 
+  ylim(-2, 2) + 
+  theme_classic()
+
+```
