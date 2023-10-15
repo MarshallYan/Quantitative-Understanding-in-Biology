@@ -48,7 +48,11 @@ phase2_spouse_idx <- function(use_rejection=False,
         # the rejection probability is inversely proportion to like
         rejection_prob <- 1/candidate_score
         # `rbernoulli` gives FALSE when probability negative
-        reject_or_accept <- rbernoulli(n = 1, p = rejection_prob)
+        if(rejection_prob > 0){
+          reject_or_accept <- !rbernoulli(n = 1, p = rejection_prob)
+        } else {
+          reject_or_accept <- FALSE
+        }
         
         # upon first accept, break out of the loop
         if(reject_or_accept == 1){
@@ -127,13 +131,13 @@ score_and_plot_figure <- function(scores){
 
 
 
-# Part 1
+## Part I
 
 __Ans:__ 
 
 + The bimodal distributions have a peak at 0 because that is the case where the optimal score in the population is included in the phase 1 fraction, and in this situation, the spouse is the last person in the population. Therefore, the distribution of the first mode is the same as the distribution that the population was sampled from (i.e. standard normal distribution).
 
-+ Two phase 1 fractions do not affect the score of main peaks of the histograms, indicating that in both situation, the expectation of spouse score does not change, unless our optimal candidate falls in phase 1. The reason could be that after getting a cutoff value, the numbers then falls to a strandard normal distribution, which is similar whenever a cutoff score is set. Thus, the "black-and-white" approach could be a better approach for this model as it gives us the difference of applying different phase 1 ratio.
++ Two phase 1 fractions do not affect the score of main peaks of the histograms, but it affects the size of the first peak. When phase 1 ratio is lager then optimum ratio, the chance that the optimal spouse fall in phase is increased. We would prefer the shades-of-gray model as it shows more information from the spouse score distribution.
 
 
 ```{r question 1}
@@ -151,12 +155,16 @@ q1_plot <- score_and_plot_figure(scores)
 q1_plot
 ```
 
-# Part 2
+## Part II
+
+__Ans:__
+
+The optimal stopping point is basically the same with different distribution of the dating pool score.
 
 ```{r question 2, fig.width=12, fig.heigth = 12}
 # Test fractions
 phase1_fractions <- seq(0.05, 0.95, 0.02)
-stdev_fractions <- c(1)#seq(1, 51, 5)
+stdev_fractions <- seq(1, 51, 5)
 
 q2_sd_experiment <- list()
 q2_scores <- list() # list to save scores 
@@ -198,6 +206,9 @@ max_scores_by_sd
 
 ```
 
+## Part III
+
+When taking rejection into account, we would agree that the inversely proportional rejection rate is reasonable. When a dating candidate has a negative score, the person will always reject a propose. In this setup, the expectation score of a spouse is always close to 0, which indicates that applying the optimal stopping model here can not help getting a spouse with a higher score.
 
 ```{r question 3}
 
