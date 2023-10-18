@@ -159,7 +159,7 @@ q1_plot
 
 __Ans:__
 
-The optimal stopping point is basically the same with different distribution of the dating pool score.
+The optimal stopping point in terms of phase 1 fraction is basically the same when drawing from normal distributions with mean = 0 but varying standard deviation. What does change is the mean score (higher SD ~ higher mean score on the y axis). 
 
 ```{r question 2, fig.width=12, fig.heigth = 12}
 # Test fractions
@@ -206,7 +206,44 @@ max_scores_by_sd
 
 ```
 
+__Ans:__
+
+The optimal stopping fraction in terms of phase 1 fraction is 0.04 = 4%. This makes sense because for a uniform distribution, we have a lot less information we need to learn (roughly min/max) because then within every score is equally probable. If the population is drawn from a uniform distribution, then all scores as equally likely. Thus, we can also see after a certain point, the score decreases linearly as we increase our chance of missing the person with the highest score as we do more sampling. 
+
+```{r question 2, uniform distribution}
+phase1_fractions <- seq(0, 0.95, 0.02)
+q2_unif_scores <- list()
+for (idx in 1:length(phase1_fractions)) {
+  
+  iteration_mean <- mean(simulate_dating_2(population = 1000,
+                                           phase1_fraction = phase1_fractions[idx],
+                                           num_iterations = 10000, 
+                                           distribution = data.frame(name="runif")))
+  
+  q2_unif_scores[[idx]] <- data.frame(mean = iteration_mean, phase1_fractions = phase1_fractions[idx])
+}
+
+q2_scores_unif_df <- bind_rows(q2_unif_scores)
+
+max_scores_by_unif_fraction <- q2_scores_unif_df %>% 
+  slice_max(mean)
+
+q2_scores_unif_df %>% 
+  ggplot(aes(x = phase1_fractions, y = mean)) + 
+  geom_point(colour = "black", fill = "lightblue", size = 4, shape = 21) +
+  geom_vline(aes(xintercept = phase1_fractions), data=max_scores_by_unif_fraction, colour = "red", linetype = "dashed") +
+  labs(title = "Scores drawn from a uniform distribution", 
+       x = "Phase 1 Fractions", 
+       y = "Score") + 
+  scale_x_continuous(n.breaks = 20) + 
+  theme_classic()
+```
+
 ## Part III
+
+Please see the function for details. 
+
+We model this by computing the probability of rejection as 1/score (inversely proportional). This is then used to do a single bernoulli trial. 1 = accept. 0 = reject. 
 
 When taking rejection into account, we would agree that the inversely proportional rejection rate is reasonable. When a dating candidate has a negative score, the person will always reject a propose. In this setup, the expectation score of a spouse is always close to 0, which indicates that applying the optimal stopping model here can not help getting a spouse with a higher score.
 
@@ -214,21 +251,21 @@ When taking rejection into account, we would agree that the inversely proportion
 
 q3_scores <- list()
 for (idx in 1:length(phase1_fractions)) {
-  iteration_mean <- mean(simulate_dating_2(population = 1000,
-                                           phase1_fraction = phase1_fractions[idx],
-                                           num_iterations = 10000, 
-                                           distribution = data.frame(name="rnorm", sd=1), 
-                                           use_rejection = TRUE))
-  
-  q3_scores[[idx]] <- data.frame(mean = iteration_mean, phase1_fractions = phase1_fractions[idx])
+iteration_mean <- mean(simulate_dating_2(population = 1000,
+phase1_fraction = phase1_fractions[idx],
+num_iterations = 10000, 
+distribution = data.frame(name="rnorm", sd=1), 
+use_rejection = TRUE))
+
+q3_scores[[idx]] <- data.frame(mean = iteration_mean, phase1_fractions = phase1_fractions[idx])
 }
 
 q3_df <- bind_rows(q3_scores)
 
 q3_df %>% ggplot(aes(x = phase1_fractions, y = mean)) + 
-  geom_point(colour = "black", fill = "lightblue", size = 4, shape = 21) +
-  labs(x = "Phase 1 Fractions", 
-       y = "Score") + 
-  ylim(-2, 2) + 
-  theme_classic()
+geom_point(colour = "black", fill = "lightblue", size = 4, shape = 21) +
+labs(x = "Phase 1 Fractions", 
+y = "Score") + 
+ylim(-2, 2) + 
+theme_classic()
 ```
