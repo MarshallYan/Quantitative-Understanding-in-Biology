@@ -1,0 +1,121 @@
+---
+title: "PS3"
+author: "Shuai Yan"
+date: "2023-10-25"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+*To create reproducible results, set random seed to 1.*
+```{r set random seed}
+set.seed(19710822)
+```
+
+## Part I
+```{r model comparison}
+myoglobin <- data.frame(s = c(1.1,  1.5,  1.6,  2.3,  3.4,  5.3,  7.5,  8.4, 14.1),
+                        v = c(1.49, 1.79, 1.79, 2.11, 2.83, 3.42, 3.79, 3.97, 4.08))
+
+# models
+michaelis_menten_model <- nls(v ~ Vmax * s / (Km + s),
+                        start = list(Vmax = 4, Km = 2),
+                        data = myoglobin)
+
+non_specific_binding_model <- nls(v ~ (Vmax * s / (Km + s)) + Mns * s,
+                              start = list(Vmax = 4, Km = 2, Mns = 1),
+                              data = myoglobin)
+
+background_signal_model <- nls(v ~ (Vmax * s / (Km + s)) + Vbk,
+                              start = list(Vmax = 4, Km = 2, Vbk = 1),
+                              data = myoglobin)
+
+ns_bk_model <- nls(v ~ (Vmax * s / (Km + s)) + Mns*s + Vbk,
+                     start = list(Vmax = 4, Km = 2, Mns = 0.5, Vbk = 0.5),
+                     data = myoglobin)
+
+# AIC correction
+corr_AIC <- function(AIC_value, n, P) {
+  return(AIC_value + 2 * (P + 1) * (P + 2) / (n - P))
+}
+
+# corrected AIC
+n <- length(myoglobin$s)
+P_mm <- length(coefficients(michaelis_menten_model))
+P_ns <- length(coefficients(non_specific_binding_model))
+P_bk <- length(coefficients(background_signal_model))
+P_ns_bk <- length(coefficients(ns_bk_model))
+
+AIC_mm <- corr_AIC(AIC(michaelis_menten_model), n, P_mm)
+AIC_ns <- corr_AIC(AIC(non_specific_binding_model), n, P_ns)
+AIC_bk <- corr_AIC(AIC(background_signal_model), n, P_bk)
+AIC_ns_bk <- corr_AIC(AIC(ns_bk_model), n, P_ns_bk)
+
+delta_ns <- AIC_ns - AIC_mm
+delta_bk <- AIC_bk - AIC_mm
+delta_ns_bk <- AIC_ns_bk - AIC_mm
+```
+
+Compared to the Michaelis Menten model, $\Delta AIC$ of the non-specific binding model is: `r delta_ns`; $\Delta AIC$ of the background signal model is: `r delta_bk`; $\Delta AIC$ of the model with both terms is: `r delta_ns_bk`. None of them is less then -6, thus there is not enough evidence to choose either of the more complex models.
+
+## Part II
+```{r multiple T test}
+control <- data.frame(    t = rnorm(10, mean = 7,  sd = 0.6),
+                      group = factor("ctrl"))
+drug_a  <- data.frame(    t = rnorm( 8, mean = 9,  sd = 0.6),
+                      group = factor("drgA"))
+drug_b  <- data.frame(    t = rnorm( 9, mean = 7,  sd = 0.6),
+                      group = factor("drgB"))
+drug_c  <- data.frame(    t = rnorm( 7, mean = 7,  sd = 0.6),
+                      group = factor("drgC"))
+drug_d  <- data.frame(    t = rnorm( 8, mean = 11, sd = 0.6),
+                      group = factor("drgD"))
+d <- rbind(control, drug_a, drug_b, drug_c, drug_d)
+
+a_test <- t.test(x=drug_a$t, y=control$t, conf.level=0.05)
+b_test <- t.test(x=drug_b$t, y=control$t, conf.level=0.05)
+c_test <- t.test(x=drug_c$t, y=control$t, conf.level=0.05)
+d_test <- t.test(x=drug_d$t, y=control$t, conf.level=0.05)
+```
+```{r A}
+print(a_test)
+```
+
+```{r B}
+print(b_test)
+```
+
+```{r C}
+print(c_test)
+```
+
+```{r D}
+print(d_test)
+```
+Thus drug A, drug B, and drug D are significant.
+
+```{r multiple T test correction}
+p_raw <- c(a_test$p.value,
+           b_test$p.value,
+           c_test$p.value,
+           d_test$p.value)
+print(which(p.adjust(p_raw, method="BH") < 0.05))
+```
+Thus, our result is not changed after Benjamini Hochberg correction.
+
+```{r ANOVA}
+anova_result <- aov(t ~ group, data=d)
+tHSD <- TukeyHSD(anova_result)
+print(tHSD)
+
+# plot
+par(mar=c(5,8,2,1)) ; plot(tHSD, las=1) # horizontal x-axis labels
+abline(v = c(-2.5, 2.5), col="red")
+```
+Only drug A and drug D are significant based on ANOVA and Tukey’s Honest Significant Differences post-testing procedure.
+
+Based on our calculation, I prefer omnibus test followed by post-testing procedure. The reason is that this test provides more power over multiple T tests, which is mostly persued except for screening. Only if the probem I am facing is clearly a screening problem, in which I want more positive data regardless of more false positive, I may use multiple T tests instead. In addition, there is a higher risk of forgetting correction after multiple T tests, which is not a problem with my preference.
