@@ -168,33 +168,32 @@
 
 \newpage
 \section{Question 1}
-
 Given:
 
 \[
-A = 
-\begin{bmatrix}
-    2 & 1\\
-    1 & 2
-\end{bmatrix}
+    A = 
+    \begin{bmatrix}
+        2 & 1\\
+        1 & 2
+    \end{bmatrix}
 \]
 
 Solve $det(\lambda I-A)=0$ to get eigenvalues and eigenvectors.
 
 \[
-\lambda I-A= 
-\begin{bmatrix}
-    \lambda-2 & -1\\
-    -1 & \lambda-2
-\end{bmatrix}
+    \lambda I-A= 
+    \begin{bmatrix}
+        \lambda-2 & -1\\
+        -1 & \lambda-2
+    \end{bmatrix}
 \]
 
 \[
-det(\lambda I-A)=(\lambda-2)^2-1=0
+    det(\lambda I-A)=(\lambda-2)^2-1=0
 \]
 
 \[
-\Rightarrow \lambda_1=3, \lambda_2=1
+    \Rightarrow \lambda_1=3, \lambda_2=1
 \]
 
 With eigenvalues, we can calculate the eigenvectors by solving $(\lambda
@@ -203,40 +202,128 @@ I-A)\vb{v}=0$.
 Substitue $\lambda_1=3$ into the equation:
 
 \[
-\begin{bmatrix}
-    1 & -1\\
-    -1 & 1
-\end{bmatrix}
-\cdot \vb{v}=0
+    \begin{bmatrix}
+        1 & -1\\
+        -1 & 1
+    \end{bmatrix}
+    \cdot \vb{v}=0
 \]
 
 \[
-\Rightarrow \vb{v}_{\lambda_1}=
-\begin{bmatrix}
-    1\\
-    1
-\end{bmatrix}
+    \Rightarrow \vb{v}_{\lambda_1}=
+    \begin{bmatrix}
+        1\\
+        1
+    \end{bmatrix}
 \]
 
 Then, substitue $\lambda_2=1$ into the equation:
 
 \[
-\begin{bmatrix}
-    -1 & -1\\
-    -1 & -1
-\end{bmatrix}
-\cdot \vb{v}=0
+    \begin{bmatrix}
+        -1 & -1\\
+        -1 & -1
+    \end{bmatrix}
+    \cdot \vb{v}=0
 \]
 
 \[
 \Rightarrow \vb{v}_{\lambda_2}=
-\begin{bmatrix}
-    -1\\
-    1
-\end{bmatrix}
+    \begin{bmatrix}
+        -1\\
+        1
+    \end{bmatrix}
 \]
 
-\section{}
+\section{Question 2}
+The eigenvalue matrix is:
+
+\[
+    \Lambda=
+    \begin{bmatrix}
+        3 & 0\\
+        0 & 1
+    \end{bmatrix}
+\]
+
+\section{Question 3}
+The eigenvector matrix is:
+
+\[
+    X=
+    \begin{bmatrix}
+        1 & -1\\
+        1 & 1
+    \end{bmatrix}
+\]
+
+\section{Question 4}
+
+\begin{eqnarray}
+    X\Lambda X^{-1}
+    &=&
+    \begin{bmatrix}
+        1 & -1\\
+        1 & 1
+    \end{bmatrix}
+    \cdot
+    \begin{bmatrix}
+        3 & 0\\
+        0 & 1
+    \end{bmatrix}
+    \cdot
+    \begin{bmatrix}
+        \frac{1}{2} & \frac{1}{2}\\[6pt]
+        -\frac{1}{2} & \frac{1}{2}
+    \end{bmatrix} \nonumber \\
+    &=&
+    \begin{bmatrix}
+        3 & -1\\
+        3 & 1
+    \end{bmatrix}
+    \cdot
+    \begin{bmatrix}
+        \frac{1}{2} & \frac{1}{2}\\[6pt]
+        -\frac{1}{2} & \frac{1}{2}
+    \end{bmatrix} \nonumber \\
+    &=&
+    \begin{bmatrix}
+        2 & 1\\
+        1 & 2
+    \end{bmatrix} \nonumber \\
+    &=&
+    A \nonumber
+\end{eqnarray}
+\textbf{\textit{Q.E.D}}
+
+\section{Question 5}
+
+\[
+    A^6=(X\Lambda X^{-1})^6=X\Lambda^6X^{-1}
+    =
+    \begin{bmatrix}
+        1 & -1\\
+        1 & 1
+    \end{bmatrix}
+    \cdot
+    \begin{bmatrix}
+        729 & 0\\
+        0 & 1
+    \end{bmatrix}
+    \cdot
+    \begin{bmatrix}
+        \frac{1}{2} & \frac{1}{2}\\[6pt]
+        -\frac{1}{2} & \frac{1}{2}
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+        365 & 364\\
+        364 & 365
+    \end{bmatrix}
+\]
+
+\section{Question 6}
+It will explode since $\lambda_1=3>1$.
 
 
 % \newpage
